@@ -7,15 +7,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AirportSearchApp {
-  CommandLineArgs cmdArgs;
+  private CommandLineArgs cmdArgs;
   private AirportRecords records;
-  private boolean isColumnNumeric;
-  private long initTime;
-  private boolean isSorted;
+  private SuffixArray suffixArray;
 
-  AirportSearchApp(CommandLineArgs cmdArgs) throws IOException {
-    this.cmdArgs = cmdArgs;
+  private boolean isBuildSuffixArray;
+
+  long initTime;
+
+  AirportSearchApp(String[] args) throws IOException {
+    long startTime = System.currentTimeMillis();
+    this.cmdArgs = new CommandLineArgs(args);
     records = loadData(cmdArgs.getDataFile(), cmdArgs.getColumnIndex());
+    long endTime = System.currentTimeMillis();
+    initTime = endTime - startTime;
   }
 
   private static AirportRecords loadData(String csvFilePath, int columnId) throws IOException {
@@ -88,10 +93,46 @@ public class AirportSearchApp {
   }
 
   public void findSubstr(String substr) {
-    SuffixArray suffixArray = new SuffixArray(records.getValue());
+    boolean isBuildSuffixArray = false;
+    if(!isBuildSuffixArray) {
+      long startTime = System.currentTimeMillis();
+      suffixArray = new SuffixArray(records.getValue());
+      long endTime = System.currentTimeMillis();
+      initTime += endTime - startTime;
+    }
     List<Integer> anw = suffixArray.findSubstring(substr);
     for (Integer integer : anw) {
       System.out.println(records.getRowNumber().get(integer));
     }
   }
+
+  public SearchResult findSubstrsAndWriteToFile() throws IOException {
+    if(!isBuildSuffixArray) {
+      long startTime = System.currentTimeMillis();
+      suffixArray = new SuffixArray(records.getValue());
+      long endTime = System.currentTimeMillis();
+      initTime += endTime - startTime;
+    }
+    List<SearchResult.SearchData> SearchDataset = new ArrayList<>();
+    try (BufferedReader reader = new BufferedReader(new FileReader(cmdArgs.getInputFile()))) {
+      String line;
+      while ((line = reader.readLine()) != null) {
+        long startTime = System.currentTimeMillis();
+        List<Integer> anw = suffixArray.findSubstring(line);
+        anw.replaceAll(index -> records.getRowNumber().get(index));
+        long endTime = System.currentTimeMillis();
+        long searchTime = endTime - startTime;
+        System.out.println("Search for: " + line + " | Found: " + anw + " | Time: " + searchTime + " ms");
+        SearchDataset.add(new SearchResult.SearchData(line, anw, searchTime));
+      }
+
+    } catch (IOException e) {
+      e.printStackTrace();
+      throw new IOException("Error reading input file", e);
+    }
+    SearchResult result = new SearchResult(initTime, SearchDataset);
+    result.writeToFile(cmdArgs.getOutputFile());
+    return result;
+  }
+
 }
