@@ -8,7 +8,6 @@ public class CommandLineArgs {
     if(!isValid(cliArgs)) throw new RuntimeException("Usage: --data <file.csv> --indexed-column-id <N> --input-file <in.txt> --output-file <out.json>");
     setArgs(cliArgs);
   }
-
   private void setArgs(String[] cliArgs){
     for (int i = 0; i < cliArgs.length; ++i) {
       String arg = cliArgs[i];
@@ -23,20 +22,18 @@ public class CommandLineArgs {
       }
     }
   }
-
   public boolean validate(){
     return false;
   }
-
   private static boolean isValid(String[] cliArgs) {
     return cliArgs[0].equals("--data") &&
             cliArgs[2].equals("--indexed-column-id") &&
             cliArgs[4].equals("--input-file") &&
             cliArgs[6].equals("--output-file");
   }
-
   public String getDataFile() { return args[0]; }
   public int getColumnIndex() { return Integer.parseInt(args[1]) - 1; }
   public String getInputFile() { return args[2]; }
   public String getOutputFile() { return args[3]; }
+
 }
