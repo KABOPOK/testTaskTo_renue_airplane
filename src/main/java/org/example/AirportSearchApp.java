@@ -69,7 +69,7 @@ public class AirportSearchApp {
     }
 
     // Pre-allocate arrays to avoid resizing
-    List<Integer> rowNumbers = new ArrayList<Integer>(lineCount * 21);
+    IntegerVector rowNumbers = new IntegerVector(lineCount * 21);
 
     // Use StringBuilder with initial capacity for the continuous string
     StringBuilder valueBuilder = new StringBuilder(lineCount * 21); // Assuming average 20 chars per field
