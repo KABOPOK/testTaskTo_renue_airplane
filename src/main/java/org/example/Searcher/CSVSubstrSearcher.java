@@ -28,7 +28,7 @@ public class CSVSubstrSearcher implements SubstrInStrSearcher {
   public CSVSubstrSearcher(String dataFile, String column) throws IOException {
     long startTime = System.currentTimeMillis();
     csvLineParser = new CSVLineParser();
-    records = loadData(dataFile, Integer.parseInt(column));
+    records = loadData(dataFile, Integer.parseInt(column) - 1);
     this.dataFile = dataFile;
     this.isBuildSuffixArray = false;
     long endTime = System.currentTimeMillis();
@@ -49,13 +49,9 @@ public class CSVSubstrSearcher implements SubstrInStrSearcher {
     StringBuilder valueBuilder = new StringBuilder(lineCount * 21);
     try (BufferedReader reader = new BufferedReader(new FileReader(csvFilePath))) {
       String line;
-      int validLines = 0;
       while ((line = reader.readLine()) != null) {
         if (line.trim().isEmpty()) {
           continue;
-        }
-        if(line.contains("Bower")){
-          System.out.println("correct");
         }
         String[] values = csvLineParser.parseCSVLine(line);
         if(!(columnId < values.length)){
@@ -63,11 +59,10 @@ public class CSVSubstrSearcher implements SubstrInStrSearcher {
         }
         try {
           int rowNumber = Integer.parseInt(values[0].replace("\"", "").trim());
-          for (int i = validLines; i <= validLines + values[columnId].length(); ++i) {
+          for (int i = 0; i <=  values[columnId].length(); ++i) {
             rowNumbers.add(rowNumber);
           }
           valueBuilder.append(values[columnId]).append(" ");
-          ++validLines;
         } catch (NumberFormatException e) {
           throw new IllegalArgumentException("First column must contain valid integer row number in line: " + line);
         }
