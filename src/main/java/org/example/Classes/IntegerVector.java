@@ -1,4 +1,4 @@
-package org.example;
+package org.example.Classes;
 
 import java.util.Arrays;
 public class IntegerVector {

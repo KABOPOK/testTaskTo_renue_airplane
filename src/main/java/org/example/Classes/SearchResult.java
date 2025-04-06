@@ -1,4 +1,4 @@
-package org.example;
+package org.example.Classes;
 
 import com.google.gson.Gson;
 import java.io.FileWriter;

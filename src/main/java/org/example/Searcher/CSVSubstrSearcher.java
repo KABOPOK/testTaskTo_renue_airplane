@@ -1,4 +1,10 @@
-package org.example;
+package org.example.Searcher;
+
+import org.example.Classes.AirportRecords;
+import org.example.Classes.IntegerVector;
+import org.example.Parser.CSVLineParser;
+import org.example.Classes.SearchResult;
+import org.example.Classes.SuffixArray;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -6,19 +12,25 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AirportSearchApp {
-  private CommandLineArgs cmdArgs;
-  private AirportRecords records;
+public class CSVSubstrSearcher implements SubstrInStrSearcher {
+  private final AirportRecords records;
+
+  private static CSVLineParser csvLineParser;
+
+  private final String dataFile;
+
   private SuffixArray suffixArray;
 
   private boolean isBuildSuffixArray;
 
-  long initTime;
+  private long initTime;
 
-  AirportSearchApp(String[] args) throws IOException {
+  public CSVSubstrSearcher(String dataFile, String column) throws IOException {
     long startTime = System.currentTimeMillis();
-    this.cmdArgs = new CommandLineArgs(args);
-    records = loadData(cmdArgs.getDataFile(), cmdArgs.getColumnIndex());
+    csvLineParser = new CSVLineParser();
+    records = loadData(dataFile, Integer.parseInt(column));
+    this.dataFile = dataFile;
+    this.isBuildSuffixArray = false;
     long endTime = System.currentTimeMillis();
     initTime = endTime - startTime;
   }
@@ -42,7 +54,13 @@ public class AirportSearchApp {
         if (line.trim().isEmpty()) {
           continue;
         }
-        String[] values = parseCSVLine(line);
+        if(line.contains("Bower")){
+          System.out.println("correct");
+        }
+        String[] values = csvLineParser.parseCSVLine(line);
+        if(!(columnId < values.length)){
+          throw new IllegalArgumentException("Invalid Index of column");
+        }
         try {
           int rowNumber = Integer.parseInt(values[0].replace("\"", "").trim());
           for (int i = validLines; i <= validLines + values[columnId].length(); ++i) {
@@ -58,41 +76,9 @@ public class AirportSearchApp {
     return new AirportRecords(rowNumbers, valueBuilder.toString());
   }
 
-  private static String[] parseCSVLine(String line) {
-    int estimatedFields = 1;
-    for (int i = 0; i < line.length(); i++) {
-      if (line.charAt(i) == ',') estimatedFields++;
-    }
-    String[] result = new String[estimatedFields];
-    int fieldIndex = 0;
-    StringBuilder currentField = new StringBuilder(line.length() / estimatedFields);
-    boolean inQuotes = false;
-    for (int i = 0; i < line.length(); i++) {
-      char c = line.charAt(i);
-      if (c == '"') {
-        if (inQuotes && i < line.length() - 1 && line.charAt(i + 1) == '"') {
-          currentField.append('"');
-          i++;
-        } else {
-          inQuotes = !inQuotes;
-        }
-      } else if (c == ',' && !inQuotes) {
-        result[fieldIndex++] = currentField.toString();
-        currentField.setLength(0);
-      } else {
-        currentField.append(c);
-      }
-    }
-    result[fieldIndex] = currentField.toString();
-    if (fieldIndex < estimatedFields - 1) {
-      String[] trimmedResult = new String[fieldIndex + 1];
-      System.arraycopy(result, 0, trimmedResult, 0, fieldIndex + 1);
-      return trimmedResult;
-    }
-    return result;
-  }
 
-  public void findSubstr(String substr) {
+  @Override
+  public List<Integer> findSubstr(String substr) {
     boolean isBuildSuffixArray = false;
     if(!isBuildSuffixArray) {
       long startTime = System.currentTimeMillis();
@@ -104,17 +90,19 @@ public class AirportSearchApp {
     for (Integer integer : anw) {
       System.out.println(records.getRowNumber().get(integer));
     }
+    return anw;
   }
 
-  public SearchResult findSubstrsAndWriteToFile() throws IOException {
+  public SearchResult findSubstrsAndWriteToFile(String targetFile, String outputFile) throws IOException {
     if(!isBuildSuffixArray) {
+      isBuildSuffixArray = true;
       long startTime = System.currentTimeMillis();
       suffixArray = new SuffixArray(records.getValue());
       long endTime = System.currentTimeMillis();
       initTime += endTime - startTime;
     }
     List<SearchResult.SearchData> SearchDataset = new ArrayList<>();
-    try (BufferedReader reader = new BufferedReader(new FileReader(cmdArgs.getInputFile()))) {
+    try (BufferedReader reader = new BufferedReader(new FileReader(targetFile))) {
       String line;
       while ((line = reader.readLine()) != null) {
         long startTime = System.currentTimeMillis();
@@ -131,7 +119,7 @@ public class AirportSearchApp {
       throw new IOException("Error reading input file", e);
     }
     SearchResult result = new SearchResult(initTime, SearchDataset);
-    result.writeToFile(cmdArgs.getOutputFile());
+    result.writeToFile(outputFile);
     return result;
   }
 
